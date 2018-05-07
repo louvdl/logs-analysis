@@ -1,28 +1,48 @@
+#!/usr/bin/env python
+
 import psycopg2
 
-#DBNAME = "news"
+# DBNAME = "news"
 
 q1 = "What are the most popular three articles of all time?"
-query1 = """create view artlog as select log.path, articles.slug, articles.title from log join articles on log.path ILIKE '%' || articles.slug; 
-select title, count(*) as num from artlog group by title order by num desc limit 3;"""
+query1 = """create view artlog as
+select log.path, articles.slug, articles.title
+from log join articles on log.path ILIKE '%' || articles.slug;
+select title, count(*) as num
+from artlog
+group by title
+order by num desc limit 3;"""
 
-q2 = "Who are the most popular article authors of all time?" 
-query2 = """create view artlogauth as select articles.author, articles.slug, authors.id, authors.name, log.path from log join articles on log.path ILIKE '%' || articles.slug join authors on authors.id = articles.author;
-select name, count(*) as numauth from artlogauth group by name order by numauth desc limit 3;"""
+q2 = "Who are the most popular article authors of all time?"
+query2 = """create view artlogauth
+as select articles.author, articles.slug, authors.id, authors.name, log.path
+from log join articles on log.path ILIKE '%' || articles.slug
+join authors on authors.id = articles.author;
+select name, count(*) as numauth
+from artlogauth
+group by name
+order by numauth desc limit 3;"""
 
 q3 = "On which days did more than 1% of requests lead to errors?"
 query3 = """
-with totalerrors as (select date(time) as day, count(*) as totalerrorsn from log where log.status='404 NOT FOUND' group by day
-	), 
-	totalperday as (select date(time) as day, count(*) as totalperdayn from log group by day
-	)
+with totalerrors as (select date(time) as day, count(*) as totalerrorsn
+from log where log.status='404 NOT FOUND'
+group by day
+    ),
+    totalperday as (select date(time) as day, count(*) as totalperdayn
+    from log
+    group by day
+    )
 
 select * from (
-	select totalperday.day,
-	round(cast((100*totalerrors.totalerrorsn) as numeric) / cast(totalperday.totalperdayn as numeric), 2) 
-	as pcterrors
-	from totalperday inner JOIN totalerrors ON totalperday.day = totalerrors.day)
+    select totalperday.day,
+    round(cast((100*totalerrors.totalerrorsn) as numeric)/
+    cast(totalperday.totalperdayn as numeric), 2)
+    as pcterrors
+    from totalperday
+    inner JOIN totalerrors ON totalperday.day = totalerrors.day)
 as x where pcterrors > 1.0;"""
+
 
 class Problem:
     def __init__(self):
